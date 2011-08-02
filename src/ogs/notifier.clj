@@ -1,7 +1,7 @@
 (ns ogs.notifier
   (:gen-class)
   (:require http.async.client
-            [seesaw core timer]
+            [seesaw core timer mig]
             [clojure.xml :as xml]
             [clojure.zip :as zip]
             [clojure.contrib.zip-filter :as zip-filter]
@@ -24,6 +24,12 @@ namespace."
   (.put (preferences-node "ogs") "login" s))
 (defn- put-password [s]
   (.put (preferences-node "ogs") "password" s))
+(defn- get-hide-mainwin []
+  (case (.get (preferences-node) "hide-mainwin" "true")
+    "true" true
+    "false" false))
+(defn- put-hide-mainwin [s]
+  (.put (preferences-node) "hide-mainwin" (str s)))
 
 (def *login-url* "http://www.online-go.com/login.php")
 (def *login-form*
@@ -88,7 +94,7 @@ namespace."
                       :option-type :yes-no-cancel
                       :content (dialog-text myturn unread)))
 
-(declare notification-timer)
+(declare notification-timer main-window-node)
 (defn- notification-callback [previous-myturn+unread]
   (.stop notification-timer)
   (.setInitialDelay notification-timer 60000)
@@ -103,39 +109,62 @@ namespace."
           (case (display-dialog myturn unread)
             :success (do (.start notification-timer) 0)
             :no (do (.start notification-timer) (+ myturn unread))
-            false)
-          (do (.start notification-timer) previous-myturn+unread))))))
+            (if (.isVisible main-window-node)
+              false
+              (.setVisible main-window-node true)))
+          (do (.start notification-timer) (if (pos? previous-myturn+unread)
+                                            (+ myturn unread)
+                                            0)))))))
 
 (def notification-timer (seesaw.timer/timer notification-callback
                                             :initial-value 0
                                             :delay 60000 :start? false))
+(defn- get-text [widget node]
+  (seesaw.core/text
+   (seesaw.core/select
+    (seesaw.core/to-root widget) [node])))
+
+(defn- get-selected [widget node]
+  (.isSelected
+   (seesaw.core/select
+    (seesaw.core/to-root widget) [node])))
+
+(defn- save-preferences [widget]
+  (put-login (get-text widget :#login))
+  (put-password (get-text widget :#password))
+  (put-hide-mainwin (get-selected widget :#hide)))
 
 (defshow main-window []
-  (->>
-   (seesaw.core/grid-panel
-    :columns 2
-    :hgap 5 :vgap 10
-    :border 5
-    :items ["Login:" (seesaw.core/text :text (get-login) :id :login)
-            "Password:" (seesaw.core/text :text (get-password) :id :password)
-            (seesaw.core/action :name "Start"
-                                :handler
-                                (fn [e]
-                                  (put-login
-                                   (seesaw.core/text
-                                    (seesaw.core/select
-                                     (seesaw.core/to-root e) [:#login])))
-                                  (put-password
-                                   (seesaw.core/text
-                                    (seesaw.core/select
-                                     (seesaw.core/to-root e) [:#password])))
-                                  (notification-callback 0)))
-            (seesaw.core/action :name "Exit"
-                                :handler
-                                (fn [e]
-                                  (seesaw.core/return-from-dialog e nil)))])
-   (seesaw.core/custom-dialog :title "OGS client"
-                              :content)))
+  (def main-window-node
+    (->>
+     (seesaw.mig/mig-panel
+      :constraints ["wrap 2"
+                    "[shrink 0] 5 [70, grow, fill]"
+                    "[shrink 0]"]
+      :items [["Login:"]
+              [(seesaw.core/text :text (get-login) :id :login)]
+              ["Password:"]
+              [(seesaw.core/password :text (get-password) :id :password)]
+              [(seesaw.core/checkbox :text "Hide main window" :id :hide
+                                     :selected? (get-hide-mainwin))
+               "span 2"]
+              [(seesaw.core/action :name "Start"
+                                   :handler
+                                   (fn [e]
+                                     (save-preferences e)
+                                     (if (get-selected e :#hide)
+                                       (seesaw.core/hide!
+                                        (seesaw.core/to-root e)))
+                                     (notification-callback 0)))]
+              [(seesaw.core/action :name "Exit"
+                                   :handler
+                                   (fn [e]
+                                     (save-preferences e)
+                                     (.stop notification-timer)
+                                     (seesaw.core/return-from-dialog e nil)))]])
+     (seesaw.core/custom-dialog :title "OGS client"
+                                :content)))
+  main-window-node)
 
 (defn -main [& args]
   (seesaw.core/native!)
