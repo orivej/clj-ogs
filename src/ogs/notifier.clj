@@ -2,10 +2,6 @@
   (:gen-class)
   (:require http.async.client
             [seesaw core timer mig]
-            [clojure.xml :as xml]
-            [clojure.zip :as zip]
-            [clojure.contrib.zip-filter :as zip-filter]
-            [clojure.contrib.zip-filter.xml :as zip-filter.xml]
             [clojure.java.io :as java.io]
             [net.cgrand.enlive-html :as html])
   (:use clojure.pprint))
