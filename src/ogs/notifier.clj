@@ -67,6 +67,16 @@ namespace."
           false)))))
   
 
+(defn- get-myturn-unread []
+  (when (login)
+    (let [resource (html/html-resource (request *mygames-url*))]
+      (let [myturn (Integer. (enlive-select resource *myturn-selector*))
+            unread (Integer.
+                    (nth (.split (enlive-select resource *unread-selector*)
+                                 "[ ()]")
+                         2))]
+        [myturn unread]))))
+
 (defn- dialog-text [myturn unread]
   (cl-format
    false "~{~@[~&~a~]~}"
@@ -87,30 +97,23 @@ namespace."
 
 (defshow display-dialog [myturn unread]
   (seesaw.core/dialog :title "OGS"
-                      :option-type :yes-no-cancel
+                      :option-type :ok-cancel
                       :content (dialog-text myturn unread)))
 
 (declare notification-timer main-window-node)
 (defn- notification-callback [previous-myturn+unread]
   (.stop notification-timer)
   (.setInitialDelay notification-timer 60000)
-  (when (login)
-    (let [resource (html/html-resource (request *mygames-url*))]
-      (let [myturn (Integer. (enlive-select resource *myturn-selector*))
-            unread (Integer.
-                    (nth (.split (enlive-select resource *unread-selector*)
-                                 "[ ()]")
-                         2))]
-        (if (> (+ myturn unread) previous-myturn+unread)
-          (case (display-dialog myturn unread)
-            :success (do (.start notification-timer) 0)
-            :no (do (.start notification-timer) (+ myturn unread))
-            (if (.isVisible main-window-node)
-              false
-              (.setVisible main-window-node true)))
-          (do (.start notification-timer) (if (pos? previous-myturn+unread)
-                                            (+ myturn unread)
-                                            0)))))))
+  (when-let [[myturn unread] (get-myturn-unread)]
+    (if (> (+ myturn unread) previous-myturn+unread)
+      (case (display-dialog myturn unread)
+        :success (do (.start notification-timer) (apply + (get-myturn-unread)))
+        (if (.isVisible main-window-node)
+          false
+          (.setVisible main-window-node true)))
+      (do (.start notification-timer) (if (pos? previous-myturn+unread)
+                                        (+ myturn unread)
+                                        0)))))
 
 (def notification-timer (seesaw.timer/timer notification-callback
                                             :initial-value 0
@@ -159,6 +162,7 @@ namespace."
                                      (.stop notification-timer)
                                      (seesaw.core/return-from-dialog e nil)))]])
      (seesaw.core/custom-dialog :title "OGS client"
+                                :on-close :dispose
                                 :content)))
   main-window-node)
 

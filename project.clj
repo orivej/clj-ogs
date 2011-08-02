@@ -1,4 +1,4 @@
-(defproject clj-ogs "0.2.1"
+(defproject clj-ogs "0.2.2"
   :description "online-go.com client"
   :main ogs.notifier
   :dependencies [[org.clojure/clojure "1.2.1"]
