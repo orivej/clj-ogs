@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp codebase="http://orivej.github.com/clj-ogs/jws" href="ogs.jnlp">
+  <information>
+    <title>OGS</title>
+    <vendor>Orivej Desh</vendor>
+    <homepage href="../index.html"/>
+    <description>OGS client 0.2</description>
+    <description kind="short">Notify about active games on OGS</description>
+    <!-- <icon href="shinypanda128.png"/> -->
+    <shortcut online="true">
+      <desktop/>
+      <menu submenu="OGS"/>
+    </shortcut>
+    <offline-allowed/>
+  </information>
+  <security>
+    <all-permissions/>
+  </security>
+  <resources>
+    <j2se version="1.5+" max-heap-size="150m"/>
+    <jar href="clj-ogs-0.2.jar" main="true"/>
+    <jar href="async-http-client-1.6.4.jar"/>
+    <jar href="clj-ogs-0.0.1.jar"/>
+    <jar href="clojure-1.2.1.jar"/>
+    <jar href="clojure-contrib-1.2.0.jar"/>
+    <jar href="enlive-1.0.0.jar"/>
+    <jar href="forms-1.2.1.jar"/>
+    <jar href="http.async.client-0.3.1.jar"/>
+    <jar href="miglayout-3.7.4.jar"/>
+    <jar href="netty-3.2.4.Final.jar"/>
+    <jar href="seesaw-1.0.10.jar"/>
+    <jar href="slf4j-api-1.6.1.jar"/>
+    <jar href="slf4j-nop-1.6.1.jar"/>
+    <jar href="tagsoup-1.2.jar"/>
+  </resources>
+  <application-desc/>
+</jnlp>
