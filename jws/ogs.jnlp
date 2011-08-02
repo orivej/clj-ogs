@@ -4,7 +4,7 @@
     <title>OGS</title>
     <vendor>Orivej Desh</vendor>
     <homepage href="../index.html"/>
-    <description>OGS client 0.2</description>
+    <description>OGS client 0.2.1</description>
     <description kind="short">Notify about active games on OGS</description>
     <!-- <icon href="shinypanda128.png"/> -->
     <shortcut online="true">
@@ -18,7 +18,7 @@
   </security>
   <resources>
     <j2se version="1.5+" max-heap-size="150m"/>
-    <jar href="clj-ogs-0.2.jar" main="true"/>
+    <jar href="clj-ogs-0.2.1.jar" main="true"/>
     <jar href="async-http-client-1.6.4.jar"/>
     <jar href="clj-ogs-0.0.1.jar"/>
     <jar href="clojure-1.2.1.jar"/>
