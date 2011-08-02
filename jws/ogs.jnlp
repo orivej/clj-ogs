@@ -20,7 +20,6 @@
     <j2se version="1.5+" max-heap-size="150m"/>
     <jar href="clj-ogs-0.2.1.jar" main="true"/>
     <jar href="async-http-client-1.6.4.jar"/>
-    <jar href="clj-ogs-0.0.1.jar"/>
     <jar href="clojure-1.2.1.jar"/>
     <jar href="clojure-contrib-1.2.0.jar"/>
     <jar href="enlive-1.0.0.jar"/>
