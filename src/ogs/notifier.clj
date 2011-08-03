@@ -2,9 +2,10 @@
   (:gen-class)
   (:require http.async.client
             [seesaw core timer mig]
-            [clojure.java.io :as java.io]
-            [net.cgrand.enlive-html :as html])
-  (:use clojure.pprint))
+            [clojure.java.io :as java.io])
+  (:use clojure.pprint)
+  (:import [org.htmlcleaner HtmlCleaner DomSerializer XPather]
+           javax.xml.xpath.XPathFactory))
 
 (defmacro preferences-node
   "Return the java.util.prefs.Preferences/userRoot for the current
@@ -35,8 +36,8 @@ namespace."
    :robot "1"})
 (def *mygames-url* "http://www.online-go.com/games/mygames.php")
 
-(def *myturn-selector* [[:a.main (html/attr= :href "/games/mygames.php")]])
-(def *unread-selector* [:table.toptable [:tr (html/nth-child 2)] [:td.toptableright (html/nth-child 2)]])
+(def *myturn-xpath* "//a[@class='main'][@href='/games/mygames.php']")
+(def *unread-xpath* "//a[@class='main'][@href='/messages/inbox.php']/../../td[2]")
 
 (def *cookies* nil)
 
@@ -48,8 +49,18 @@ namespace."
        (.toByteArray
         (http.async.client/body response))))))
 
-(defn- enlive-select [resource selector]
-  (html/text (first (html/select resource selector))))
+(defn- dom [req]
+  (let [cleaner (HtmlCleaner.)
+        props (.getProperties cleaner)
+        node (.clean cleaner req)
+        serializer (DomSerializer. props)]
+    (.createDOM serializer node)))
+
+(defn- get-xpath [doc xpath]
+  (-> (XPathFactory/newInstance)
+      .newXPath
+      (.compile xpath)
+      (.evaluate doc)))
 
 (defn- login []
   (with-open [client (http.async.client/create-client)]
@@ -69,10 +80,10 @@ namespace."
 
 (defn- get-myturn-unread []
   (when (login)
-    (let [resource (html/html-resource (request *mygames-url*))]
-      (let [myturn (Integer. (enlive-select resource *myturn-selector*))
+    (let [doc (dom (request *mygames-url*))]
+      (let [myturn (Integer. (get-xpath doc *myturn-xpath*))
             unread (Integer.
-                    (nth (.split (enlive-select resource *unread-selector*)
+                    (nth (.split (get-xpath doc *unread-xpath*)
                                  "[ ()]")
                          2))]
         [myturn unread]))))
